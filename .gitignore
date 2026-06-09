@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# Environments
+.venv/
+venv/
+.env
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Generated ledgers / run artifacts
+.autoreview/
+examples/*/ledger/
+examples/*/results/
+**/manifest.json
+
+# Large analysis data (never commit raw data)
+*.h5ad
+*.h5
+*.loom
+*.mtx
+
+# OS
+.DS_Store

@@ -1,0 +1,7 @@
+sample,group,Mac,Fb,T,Other
+ctrl1,control,100,700,150,50
+ctrl2,control,80,720,120,80
+dis1,disease,600,200,150,50
+dis2,disease,500,300,120,80
+treat1,treated,150,650,150,50
+treat2,treated,130,700,120,50
