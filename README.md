@@ -15,13 +15,8 @@ The following two are required
 ### 1. The CLI
 
 ```bash
-pip install -e .            # or:  uv pip install -e .
-pip install -e '.[dev]'     # with pytest
-uv tool install --editable .   # global: the `autoreview` command in every project
+uv tool install git+https://github.com/brainfo/autoreview.git
 ```
-
-The agents call `autoreview` as a bare command, so the global `uv tool install`
-is the most convenient form for the plugin below.
 
 ### 2. Claude Code plugin
 
