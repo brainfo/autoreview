@@ -46,14 +46,10 @@ In Claude Code:
 /autoreview-run  <your analysis question>  path/to/data ...
 ```
 
-The command conducts the staged pipeline, launching the `overseer` between every
-stage and stopping on any integrity failure or unmet promise.
-
 ### During the run - the agents drive the CLI for you
 
 Every role records and checks its work *through* the `autoreview` CLI, so the
-state of the review lands in `.autoreview/` as it happens - it is never left to
-live only in the chat. Given the CLI is installed, you do nothing during the run:
+state of the review lands in `.autoreview/` as it happens:
 
 | role | drives | writes |
 |---|---|---|
@@ -81,15 +77,6 @@ autoreview report          # regenerate REPORT.md
 The agent run and your audit use identical commands against identical files. That
 sameness is reproducibility, not redundancy: it is what lets you re-earn trust in
 a result without re-trusting the agents that produced it.
-
-### The loop
-
-```
-presets installed once
-  -> /autoreview-run <question> <data>
-  -> read REPORT.md / autoreview status
-  -> re-run guard verify + check run whenever you want to re-earn trust
-```
 
 ### The Stop hook
 
