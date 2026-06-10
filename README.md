@@ -8,23 +8,6 @@ every verdict so nothing rests on an agent's say-so.
 A full worked run is saved in `examples/placenta_showcase/`, which was from one prompt "/autoreview-run what you notice with @first_trimester_final.h5ad
 @term_final.h5ad".
 
-## Roles
-
-Five Claude Code subagents (`.claude/agents/`), each with one job:
-
-| role | does | reviews |
-|---|---|---|
-| `planner` | turns a question + inputs into an explicit `plan.json` | - |
-| `executor` | writes and runs the analysis code, logs claims + numbers | - |
-| `reviewer-numeric` | authors task-specific invariants as checks, runs them | the numbers |
-| `reviewer-literature` | searches the literature, logs cited verdicts | the interpretation |
-| `overseer` | guards file integrity, checks every other agent did its job | the agents |
-
-The deterministic parts (the ledger, the numeric/logic engine, the integrity
-guard) live in the Python package and run with no LLM. The agents drive that core
-through the `autoreview` CLI, so the state of a review is always in files you can
-inspect, diff, and re-run.
-
 ## Install
 
 The following two are required
