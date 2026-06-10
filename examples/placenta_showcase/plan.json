@@ -1,0 +1,165 @@
+{
+  "question": "What do you notice with first_trimester_final.h5ad and term_final.h5ad? (Comparative characterization of two human placenta scRNA-seq AnnData datasets: first trimester vs term, surfacing what is notably different.)",
+  "inputs": [
+    "/mnt/run/jh/projects/tes_agent/first_trimester_final.h5ad",
+    "/mnt/run/jh/projects/tes_agent/term_final.h5ad"
+  ],
+  "steps": [
+    {
+      "id": "step-1",
+      "goal": "Establish the basic structural shape of each dataset (cells, genes, batches/studies) so all later fractions and overlaps have an agreed denominator.",
+      "approach": "Open each .h5ad backed='r' (do NOT load full X). Record adata.shape -> n_cells, n_genes. Record n_genes of raw if present (first trimester raw). Record number of distinct values in the batch/study columns: first trimester -> 'study' (expect 3) and 'studies' (expect 9); term -> 'studies' (expect 3) and 'sample_id' (expect 3 non-null control samples). Record which annotation column will be used as the comparable cell-type axis per dataset: first trimester='annotation' (6 cats) and 'annotation_withperi' (7 cats); term='annotate_general' (7 cats). Write one row per dataset to results/step-1_structure.csv with columns: dataset, n_cells, n_genes, n_raw_genes, n_studies, n_samples, celltype_col, n_celltypes.",
+      "inputs": [
+        "/mnt/run/jh/projects/tes_agent/first_trimester_final.h5ad",
+        "/mnt/run/jh/projects/tes_agent/term_final.h5ad"
+      ],
+      "outputs": [
+        "/mnt/run/jh/projects/tes_agent/results/step-1_structure.csv"
+      ],
+      "claims": [
+        {
+          "id": "claim-ft-shape",
+          "states": "First trimester dataset has 35461 cells and 5000 (highly variable) genes in the working matrix, with a raw matrix of 27526 genes.",
+          "numbers": "first_trimester n_cells=35461, n_genes=5000, n_raw_genes=27526",
+          "interpretation": "First trimester is the larger dataset by cell count and is reduced to a 5000-gene HVG working set.",
+          "invariants": "n_cells>0; n_genes>0; n_genes (5000) <= n_raw_genes (27526); integers exact; this n_cells must equal the row count used as the denominator for all step-3 first-trimester fractions and equal the n_cells in step-2."
+        },
+        {
+          "id": "claim-tm-shape",
+          "states": "Term dataset has 23378 cells and 25777 genes, with no raw matrix present.",
+          "numbers": "term n_cells=23378, n_genes=25777, n_raw_genes=null/NA",
+          "interpretation": "Term retains the full gene set (no HVG subsetting of var) and has fewer cells than first trimester.",
+          "invariants": "n_cells>0; n_genes>0; n_raw_genes is null/NA (no raw); term n_cells (23378) < first-trimester n_cells (35461); this n_cells must equal the denominator for all step-3 term fractions and the n_cells in step-2."
+        },
+        {
+          "id": "claim-batches",
+          "states": "First trimester spans 3 studies (9 study-substrata); term spans 3 studies (3 control sample_ids).",
+          "numbers": "first_trimester n_studies=3, n_samples=9; term n_studies=3, n_samples=3",
+          "interpretation": "Both are multi-study integrated atlases; cell-type fractions are pooled across donors/studies, not per-donor.",
+          "invariants": "all counts are positive integers; n_studies>=1; n_samples>=n_studies or documented otherwise."
+        }
+      ]
+    },
+    {
+      "id": "step-2",
+      "goal": "Document the data-state of each matrix (X, layers, raw) so downstream interpretation knows what is normalized vs raw, and flag the first-trimester 'counts' caveat.",
+      "approach": "For each dataset, on a slice of the first 2000 rows (backed read, never the full matrix), compute for X and for each layer and for raw.X: global min, max of nonzero data, and fraction of nonzero entries that are non-integer (|v-round(v)|>1e-6). Determine and record a categorical state label per matrix in {raw_counts, log_normalized, scaled_zscore(has negatives), unknown}. Key expected findings to record: term layers['counts'] is genuine raw integer counts (min~1, max in thousands, frac_noninteger=0) while term X equals layers['log1pM'] (log-normalized, non-integer, non-negative); first-trimester X is log-normalized (non-negative, non-integer) and first-trimester layers['counts'] is NOT integer (non-integer values, min~0.30) so it is not genuine raw counts, and first-trimester raw.X equals X (also non-integer). Write results/step-2_datastate.csv with columns: dataset, matrix, min, max_nonzero, frac_noninteger, has_negative, state_label.",
+      "inputs": [
+        "/mnt/run/jh/projects/tes_agent/first_trimester_final.h5ad",
+        "/mnt/run/jh/projects/tes_agent/term_final.h5ad"
+      ],
+      "outputs": [
+        "/mnt/run/jh/projects/tes_agent/results/step-2_datastate.csv"
+      ],
+      "claims": [
+        {
+          "id": "claim-term-counts-raw",
+          "states": "Term layers['counts'] contains genuine raw integer UMI counts whereas term X is log-normalized (equal to layers['log1pM']).",
+          "numbers": "term counts: min>=1, frac_noninteger=0, max_nonzero in the thousands; term X: frac_noninteger>0, has_negative=False",
+          "interpretation": "Term provides recoverable raw counts suitable for re-normalization or pseudobulk; X is already log1p-normalized.",
+          "invariants": "term counts frac_noninteger==0 and min>=0 (counts non-negative integers); term X frac_noninteger>0 and has_negative==False (log-normalized, not z-scored); state_label(term,counts)=='raw_counts', state_label(term,X)=='log_normalized'."
+        },
+        {
+          "id": "claim-ft-counts-not-raw",
+          "states": "First trimester has NO genuine raw counts: X, layers['counts'], and raw.X are all non-integer and non-negative (log-normalized), so the 'counts' layer is misnamed relative to term.",
+          "numbers": "first_trimester X frac_noninteger>0, has_negative=False; first_trimester counts frac_noninteger>0 (min ~0.30); first_trimester raw.X frac_noninteger>0",
+          "interpretation": "Pseudobulk/DE that assumes integer counts cannot be done directly on first trimester; the two datasets are NOT symmetric in available raw data, a key caveat for any cross-dataset quantitative comparison.",
+          "invariants": "first_trimester counts frac_noninteger>0 (NOT raw integers); all three matrices has_negative==False; state_label(first_trimester,counts) != 'raw_counts'; contrast: term counts frac_noninteger==0 while first_trimester counts frac_noninteger>0 (asymmetry must hold)."
+        }
+      ]
+    },
+    {
+      "id": "step-3",
+      "goal": "Quantify cell-type composition within each dataset as fractions that sum to 1, using each dataset's native comparable annotation column.",
+      "approach": "For first trimester use obs['annotation'] (and separately obs['annotation_withperi']); for term use obs['annotate_general']. For each (dataset, celltype_col) compute value_counts (drop NaN) -> per-celltype count and fraction = count/sum(counts over non-NaN). Record the non-NaN denominator n_annotated and the number of NaN/unannotated cells (term annotate_general should annotate all cells; term obs['annotation'] has 8321 NaN but is NOT the chosen axis). Write results/step-3_composition.csv with columns: dataset, celltype_col, celltype, count, fraction, n_annotated. Also write results/step-3_composition_totals.csv with one row per (dataset, celltype_col): n_annotated, n_nan, sum_fraction.",
+      "inputs": [
+        "/mnt/run/jh/projects/tes_agent/first_trimester_final.h5ad",
+        "/mnt/run/jh/projects/tes_agent/term_final.h5ad"
+      ],
+      "outputs": [
+        "/mnt/run/jh/projects/tes_agent/results/step-3_composition.csv",
+        "/mnt/run/jh/projects/tes_agent/results/step-3_composition_totals.csv"
+      ],
+      "claims": [
+        {
+          "id": "claim-ft-composition",
+          "states": "First trimester (annotation) is dominated by CTB (~14192 cells), followed by Stroma (~10446), Hofbauer cells (~5838), EVT (~2692), STB (~1505), Endothelial cells (~788).",
+          "numbers": "per-celltype count and fraction for first_trimester/annotation: CTB=14192, Stroma=10446, Hofbauer cells=5838, EVT=2692, STB=1505, Endothelial cells=788",
+          "interpretation": "CTB (cytotrophoblast) is the single largest population in early placenta, consistent with the proliferative trophoblast compartment of first-trimester villi.",
+          "invariants": "sum of the 6 counts == n_annotated (35461 if no NaN in 'annotation'); sum of fractions == 1.0 (within 1e-6); every count>=0; every fraction in [0,1]; CTB count is the max; for each row count == round(fraction * n_annotated)."
+        },
+        {
+          "id": "claim-ft-withperi",
+          "states": "When the Perivascular label is split out (annotation_withperi), first trimester gains a Perivascular population (~3589 cells) carved mostly out of Stroma (Stroma drops from ~10446 to ~6857).",
+          "numbers": "first_trimester/annotation_withperi: Perivascular=3589, Stroma=6857; other 5 categories unchanged from 'annotation'",
+          "interpretation": "Perivascular cells are a stromal subset distinguished only under the finer annotation; choice of annotation column changes the stromal fraction.",
+          "invariants": "sum of all 7 annotation_withperi counts == sum of all 6 annotation counts == n_annotated; Stroma(withperi)+Perivascular(withperi) == Stroma(annotation) (i.e. 6857+3589 == 10446); CTB, Hofbauer cells, EVT, STB, Endothelial cells counts identical across the two columns; fractions sum to 1."
+        },
+        {
+          "id": "claim-tm-composition",
+          "states": "Term (annotate_general) is led by CTB (~7614 cells), then Stroma (~6508), Hofbauer cells (~5790), EVT (~1889), STB (~586), Endothelial cells (~520), Perivascular (~471).",
+          "numbers": "per-celltype count and fraction for term/annotate_general: CTB=7614, Stroma=6508, Hofbauer cells=5790, EVT=1889, STB=586, Endothelial cells=520, Perivascular=471",
+          "interpretation": "Term placenta still shows trophoblast and stromal/Hofbauer dominance, but the relative balance among compartments differs from first trimester (quantified in step-4).",
+          "invariants": "sum of the 7 counts == n_annotated; n_annotated == term n_cells (23378) only if annotate_general has no NaN, else n_annotated reported and used as denominator; sum of fractions == 1.0 (within 1e-6); CTB count is the max; for each row count == round(fraction * n_annotated)."
+        }
+      ]
+    },
+    {
+      "id": "step-4",
+      "goal": "Quantify the SHIFT in cell-type composition between first trimester and term on the shared label set, identifying which populations rise and which fall.",
+      "approach": "Restrict to the cell-type labels shared by first-trimester 'annotation_withperi' and term 'annotate_general' (expected shared set: CTB, Stroma, Hofbauer cells, EVT, STB, Endothelial cells, Perivascular). NOTE the spelling/label normalization needed: term uses 'Hofbaucer cells' in annotate_general (typo) vs first-trimester 'Hofbauer cells'; the executor must map term 'Hofbaucer cells' -> 'Hofbauer cells' before joining and record that it did so. For each shared label compute frac_first_trimester and frac_term (from step-3 fractions, recomputed on the shared-label denominator so each side sums to 1 over shared labels), delta = frac_term - frac_first_trimester, log2_ratio = log2(frac_term/frac_first_trimester). Classify each as 'rises'(delta>0) or 'falls'(delta<0) toward term. Write results/step-4_composition_shift.csv with columns: celltype, frac_first_trimester, frac_term, delta, log2_ratio, direction.",
+      "inputs": [
+        "/mnt/run/jh/projects/tes_agent/results/step-3_composition.csv"
+      ],
+      "outputs": [
+        "/mnt/run/jh/projects/tes_agent/results/step-4_composition_shift.csv"
+      ],
+      "claims": [
+        {
+          "id": "claim-shift-conservation",
+          "states": "The composition fractions on the shared label set each sum to 1 per dataset, and deltas across labels sum to 0, so the shift is a redistribution among compartments.",
+          "numbers": "sum(frac_first_trimester over shared labels)=1; sum(frac_term over shared labels)=1; sum(delta over shared labels)=0",
+          "interpretation": "No cells are created or destroyed in the comparison; rises in some compartments are exactly offset by falls in others.",
+          "invariants": "sum(frac_first_trimester)==1 (±1e-6); sum(frac_term)==1 (±1e-6); sum(delta)==0 (±1e-6); for each label delta == frac_term - frac_first_trimester; direction=='rises' iff delta>0 and 'falls' iff delta<0; log2_ratio sign matches direction."
+        },
+        {
+          "id": "claim-shift-direction",
+          "states": "Relative to first trimester, term shows a higher fraction of Hofbauer cells and Stroma/fibroblast compartment, and a lower fraction of CTB (cytotrophoblast); the dominant trophoblast compartment shrinks as the villous stroma/macrophage compartment expands toward term.",
+          "numbers": "direction (rises/falls) and delta for each shared celltype, in particular CTB delta<0 (falls) and Hofbauer cells delta>0 (rises)",
+          "interpretation": "A decline in proliferative cytotrophoblast fraction with relative expansion of Hofbauer (placental macrophage) and stromal populations is consistent with placental maturation from first trimester to term. This directional claim is the literature-checkable assertion.",
+          "invariants": "CTB direction=='falls' (frac_term < frac_first_trimester); Hofbauer cells direction=='rises' (frac_term > frac_first_trimester); each direction label is internally consistent with the sign of its delta and log2_ratio; magnitudes must be reproducible from step-3 counts."
+        }
+      ]
+    },
+    {
+      "id": "step-5",
+      "goal": "Quantify shared vs dataset-specific genes and cell-type labels between the two datasets.",
+      "approach": "Gene overlap: compute the intersection sizes of var_names. Report |first_trimester var (5000 HVG)|, |term var (25777)|, |intersection| (expect 3491); and using first-trimester raw var_names (27526), |first_trimester raw ∩ term var| (expect 18480). Also report Jaccard for the raw-vs-term comparison = |intersection| / |union|. Label overlap: compare the cell-type label SETS after the Hofbauer typo normalization from step-4: first-trimester 'annotation_withperi' set vs term 'annotate_general' set; report intersection, first-trimester-only, term-only. Write results/step-5_gene_overlap.csv (columns: comparison, n_set_a, n_set_b, n_intersection, n_union, jaccard) and results/step-5_label_overlap.csv (columns: label, in_first_trimester, in_term, shared).",
+      "inputs": [
+        "/mnt/run/jh/projects/tes_agent/first_trimester_final.h5ad",
+        "/mnt/run/jh/projects/tes_agent/term_final.h5ad"
+      ],
+      "outputs": [
+        "/mnt/run/jh/projects/tes_agent/results/step-5_gene_overlap.csv",
+        "/mnt/run/jh/projects/tes_agent/results/step-5_label_overlap.csv"
+      ],
+      "claims": [
+        {
+          "id": "claim-gene-overlap",
+          "states": "The first-trimester 5000-gene HVG set overlaps term's 25777 genes in 3491 genes; using first-trimester's full raw gene set (27526) the overlap with term is 18480 genes.",
+          "numbers": "hvg_vs_term: n_set_a=5000, n_set_b=25777, n_intersection=3491; raw_vs_term: n_set_a=27526, n_set_b=25777, n_intersection=18480",
+          "interpretation": "The datasets use largely overlapping but non-identical gene namespaces; the working-matrix gene overlap is limited because first trimester is HVG-subset, so cross-dataset gene-level analysis should use the raw/full namespaces.",
+          "interpretation_note": "no biological literature check needed; this is a data-engineering observation.",
+          "invariants": "n_intersection <= min(n_set_a, n_set_b) for both comparisons; 3491 <= 5000; 18480 <= 25777 and 18480 <= 27526; n_union == n_set_a + n_set_b - n_intersection; jaccard == n_intersection/n_union and in [0,1]; raw_vs_term n_intersection (18480) >= hvg_vs_term n_intersection (3491)."
+        },
+        {
+          "id": "claim-label-overlap",
+          "states": "After normalizing the Hofbauer spelling, the comparable cell-type label sets are fully shared between first trimester (annotation_withperi) and term (annotate_general): both contain CTB, Stroma, Hofbauer cells, EVT, STB, Endothelial cells, Perivascular.",
+          "numbers": "n_shared_labels=7, n_first_trimester_only=0, n_term_only=0 (on the normalized comparable columns)",
+          "interpretation": "The two atlases were annotated onto a common 7-compartment scheme, which is what makes the step-4 compositional comparison valid.",
+          "invariants": "for the comparable columns, n_first_trimester_only + n_shared == 7 and n_term_only + n_shared == 7; every label has shared==True iff in_first_trimester AND in_term; the shared label set used here must be identical to the shared set used in step-4."
+        }
+      ]
+    }
+  ]
+}

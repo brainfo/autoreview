@@ -1,0 +1,521 @@
+[
+  {
+    "claim": "claim-ft-shape",
+    "id": "rev-ft-counts-nonneg-ints",
+    "kind": "bounds",
+    "values": ["n_cells", "n_genes", "n_raw_genes", "n_celltypes", "n_celltypes_withperi"],
+    "lo": 1,
+    "description": "all structural counts are strictly positive"
+  },
+  {
+    "claim": "claim-ft-shape",
+    "id": "rev-ft-hvg-le-raw-nonstrict",
+    "kind": "monotonic",
+    "values": ["n_genes", "n_raw_genes"],
+    "direction": "nondecreasing",
+    "description": "HVG working gene count <= raw gene count"
+  },
+  {
+    "claim": "claim-ft-shape",
+    "id": "rev-ft-withperi-adds-one",
+    "kind": "expr",
+    "lhs": "n_celltypes_withperi",
+    "rhs": "n_celltypes + 1",
+    "tol": 0,
+    "vars": {"n_celltypes_withperi": "n_celltypes_withperi", "n_celltypes": "n_celltypes"},
+    "description": "splitting Perivascular out of Stroma adds exactly one cell-type category"
+  },
+
+  {
+    "claim": "claim-tm-shape",
+    "id": "rev-tm-counts-pos",
+    "kind": "bounds",
+    "values": ["n_cells", "n_genes", "n_celltypes"],
+    "lo": 1,
+    "description": "all structural counts strictly positive"
+  },
+  {
+    "claim": "claim-tm-shape",
+    "id": "rev-tm-fewer-cells-than-ft",
+    "kind": "monotonic",
+    "values": ["n_cells", {"claim": "claim-ft-shape", "key": "n_cells"}],
+    "direction": "increasing",
+    "description": "term n_cells (23378) < first-trimester n_cells (35461)"
+  },
+  {
+    "claim": "claim-tm-shape",
+    "id": "rev-tm-more-genes-than-ft-hvg",
+    "kind": "monotonic",
+    "values": [{"claim": "claim-ft-shape", "key": "n_genes"}, "n_genes"],
+    "direction": "increasing",
+    "description": "term keeps full gene set (25777) > first-trimester HVG working set (5000)"
+  },
+
+  {
+    "claim": "claim-batches",
+    "id": "rev-batches-counts-pos",
+    "kind": "bounds",
+    "values": ["ft_n_studies", "ft_n_samples", "tm_n_studies", "tm_n_samples"],
+    "lo": 1,
+    "description": "study/sample counts strictly positive"
+  },
+  {
+    "claim": "claim-batches",
+    "id": "rev-batches-nan-nonneg",
+    "kind": "bounds",
+    "values": ["tm_sample_id_nan"],
+    "lo": 0,
+    "description": "count of NaN sample_id cells is non-negative"
+  },
+
+  {
+    "claim": "claim-term-counts-raw",
+    "id": "rev-tm-counts-min-nonneg",
+    "kind": "bounds",
+    "values": ["counts_min"],
+    "lo": 0,
+    "description": "raw counts non-negative"
+  },
+  {
+    "claim": "claim-term-counts-raw",
+    "id": "rev-tm-counts-max-large",
+    "kind": "bounds",
+    "values": ["counts_max_nonzero"],
+    "lo": 1000,
+    "description": "raw UMI max is in the thousands (claim says ~thousands)"
+  },
+  {
+    "claim": "claim-term-counts-raw",
+    "id": "rev-tm-X-frac-bounds",
+    "kind": "bounds",
+    "values": ["X_frac_noninteger"],
+    "lo": 0,
+    "hi": 1,
+    "description": "frac_noninteger is a proportion in [0,1]"
+  },
+  {
+    "claim": "claim-term-counts-raw",
+    "id": "rev-tm-counts-int-vs-X-noninteger",
+    "kind": "monotonic",
+    "values": ["counts_frac_noninteger", "X_frac_noninteger"],
+    "direction": "increasing",
+    "description": "within term: counts are integer (frac=0) strictly below X non-integer fraction"
+  },
+
+  {
+    "claim": "claim-ft-counts-not-raw",
+    "id": "rev-ft-counts-frac-bounds",
+    "kind": "bounds",
+    "values": ["counts_frac_noninteger", "X_frac_noninteger", "rawX_frac_noninteger"],
+    "lo": 0,
+    "hi": 1,
+    "description": "all frac_noninteger are proportions in [0,1]"
+  },
+  {
+    "claim": "claim-ft-counts-not-raw",
+    "id": "rev-ft-asymmetry-crossclaim",
+    "kind": "monotonic",
+    "values": [{"claim": "claim-term-counts-raw", "key": "counts_frac_noninteger"}, "counts_frac_noninteger"],
+    "direction": "increasing",
+    "description": "cross-claim asymmetry: term counts integer (0) strictly < first-trimester counts non-integer fraction; the two datasets are NOT symmetric in raw data"
+  },
+  {
+    "claim": "claim-ft-counts-not-raw",
+    "id": "rev-ft-term-counts-ref-agrees",
+    "kind": "equal",
+    "values": ["term_counts_frac_noninteger", {"claim": "claim-term-counts-raw", "key": "counts_frac_noninteger"}],
+    "tol": 0,
+    "description": "the term_counts_frac_noninteger value logged here matches what claim-term-counts-raw measured"
+  },
+
+  {
+    "claim": "claim-ft-composition",
+    "id": "rev-ftc-counts-nonneg",
+    "kind": "bounds",
+    "values": ["CTB_count", "Stroma_count", "Hofbauer_cells_count", "EVT_count", "STB_count", "Endothelial_cells_count"],
+    "lo": 0,
+    "description": "every per-type count is non-negative"
+  },
+  {
+    "claim": "claim-ft-composition",
+    "id": "rev-ftc-id-Stroma",
+    "kind": "expr", "lhs": "c", "rhs": "round(f*n)", "tol": 0.5,
+    "vars": {"c": "Stroma_count", "f": "Stroma_frac", "n": "n_annotated"},
+    "description": "Stroma count == round(frac*N)"
+  },
+  {
+    "claim": "claim-ft-composition",
+    "id": "rev-ftc-id-Hofbauer",
+    "kind": "expr", "lhs": "c", "rhs": "round(f*n)", "tol": 0.5,
+    "vars": {"c": "Hofbauer_cells_count", "f": "Hofbauer_cells_frac", "n": "n_annotated"},
+    "description": "Hofbauer count == round(frac*N)"
+  },
+  {
+    "claim": "claim-ft-composition",
+    "id": "rev-ftc-id-EVT",
+    "kind": "expr", "lhs": "c", "rhs": "round(f*n)", "tol": 0.5,
+    "vars": {"c": "EVT_count", "f": "EVT_frac", "n": "n_annotated"},
+    "description": "EVT count == round(frac*N)"
+  },
+  {
+    "claim": "claim-ft-composition",
+    "id": "rev-ftc-id-STB",
+    "kind": "expr", "lhs": "c", "rhs": "round(f*n)", "tol": 0.5,
+    "vars": {"c": "STB_count", "f": "STB_frac", "n": "n_annotated"},
+    "description": "STB count == round(frac*N)"
+  },
+  {
+    "claim": "claim-ft-composition",
+    "id": "rev-ftc-id-Endo",
+    "kind": "expr", "lhs": "c", "rhs": "round(f*n)", "tol": 0.5,
+    "vars": {"c": "Endothelial_cells_count", "f": "Endothelial_cells_frac", "n": "n_annotated"},
+    "description": "Endothelial count == round(frac*N)"
+  },
+  {
+    "claim": "claim-ft-composition",
+    "id": "rev-ftc-counts-sum-to-N",
+    "kind": "sum",
+    "values": ["CTB_count", "Stroma_count", "Hofbauer_cells_count", "EVT_count", "STB_count", "Endothelial_cells_count"],
+    "target": "n_annotated", "tol": 0,
+    "description": "per-type counts sum to n_annotated"
+  },
+  {
+    "claim": "claim-ft-composition",
+    "id": "rev-ftc-ctb-gt-hofb",
+    "kind": "monotonic",
+    "values": ["Hofbauer_cells_count", "CTB_count"],
+    "direction": "increasing",
+    "description": "CTB strictly exceeds the next-largest non-Stroma compartment (Hofbauer)"
+  },
+
+  {
+    "claim": "claim-ft-withperi",
+    "id": "rev-wp-counts-nonneg",
+    "kind": "bounds",
+    "values": ["peri_CTB_count", "peri_Stroma_count", "peri_Hofbauer_cells_count", "peri_Perivascular_count", "peri_EVT_count", "peri_STB_count", "peri_Endothelial_cells_count"],
+    "lo": 0,
+    "description": "every withperi per-type count non-negative"
+  },
+  {
+    "claim": "claim-ft-withperi",
+    "id": "rev-wp-frac-bounds",
+    "kind": "bounds",
+    "values": ["peri_CTB_frac", "peri_Stroma_frac", "peri_Hofbauer_cells_frac", "peri_Perivascular_frac", "peri_EVT_frac", "peri_STB_frac", "peri_Endothelial_cells_frac"],
+    "lo": 0, "hi": 1,
+    "description": "withperi fractions in [0,1]"
+  },
+  {
+    "claim": "claim-ft-withperi",
+    "id": "rev-wp-stroma-split-explicit",
+    "kind": "expr",
+    "lhs": "stroma + peri", "rhs": "ann_stroma", "tol": 0,
+    "vars": {"stroma": "peri_Stroma_count", "peri": "peri_Perivascular_count", "ann_stroma": "ann_Stroma_count"},
+    "description": "Stroma_withperi + Perivascular == Stroma_annotation (6857+3589==10446)"
+  },
+  {
+    "claim": "claim-ft-withperi",
+    "id": "rev-wp-id-Peri",
+    "kind": "expr", "lhs": "c", "rhs": "round(f*n)", "tol": 0.5,
+    "vars": {"c": "peri_Perivascular_count", "f": "peri_Perivascular_frac", "n": "peri_n_annotated"},
+    "description": "Perivascular count == round(frac*N)"
+  },
+  {
+    "claim": "claim-ft-withperi",
+    "id": "rev-wp-id-Stroma",
+    "kind": "expr", "lhs": "c", "rhs": "round(f*n)", "tol": 0.5,
+    "vars": {"c": "peri_Stroma_count", "f": "peri_Stroma_frac", "n": "peri_n_annotated"},
+    "description": "withperi Stroma count == round(frac*N)"
+  },
+  {
+    "claim": "claim-ft-withperi",
+    "id": "rev-wp-N-eq-ftshape",
+    "kind": "equal",
+    "values": ["peri_n_annotated", {"claim": "claim-ft-shape", "key": "n_cells"}],
+    "tol": 0,
+    "description": "withperi denominator == first-trimester n_cells"
+  },
+  {
+    "claim": "claim-ft-withperi",
+    "id": "rev-wp-N-eq-ann-comp",
+    "kind": "equal",
+    "values": ["peri_n_annotated", {"claim": "claim-ft-composition", "key": "n_annotated"}],
+    "tol": 0,
+    "description": "withperi denominator == annotation-composition denominator (same cells, finer labels)"
+  },
+
+  {
+    "claim": "claim-tm-composition",
+    "id": "rev-tmc-counts-nonneg",
+    "kind": "bounds",
+    "values": ["CTB_count", "Stroma_count", "Hofbaucer_cells_count", "EVT_count", "STB_count", "Endothelial_cells_count", "Perivascular_count"],
+    "lo": 0,
+    "description": "every per-type count non-negative"
+  },
+  {
+    "claim": "claim-tm-composition",
+    "id": "rev-tmc-id-Stroma",
+    "kind": "expr", "lhs": "c", "rhs": "round(f*n)", "tol": 0.5,
+    "vars": {"c": "Stroma_count", "f": "Stroma_frac", "n": "n_annotated"},
+    "description": "Stroma count == round(frac*N)"
+  },
+  {
+    "claim": "claim-tm-composition",
+    "id": "rev-tmc-id-Hofb",
+    "kind": "expr", "lhs": "c", "rhs": "round(f*n)", "tol": 0.5,
+    "vars": {"c": "Hofbaucer_cells_count", "f": "Hofbaucer_cells_frac", "n": "n_annotated"},
+    "description": "Hofbaucer count == round(frac*N)"
+  },
+  {
+    "claim": "claim-tm-composition",
+    "id": "rev-tmc-id-EVT",
+    "kind": "expr", "lhs": "c", "rhs": "round(f*n)", "tol": 0.5,
+    "vars": {"c": "EVT_count", "f": "EVT_frac", "n": "n_annotated"},
+    "description": "EVT count == round(frac*N)"
+  },
+  {
+    "claim": "claim-tm-composition",
+    "id": "rev-tmc-id-STB",
+    "kind": "expr", "lhs": "c", "rhs": "round(f*n)", "tol": 0.5,
+    "vars": {"c": "STB_count", "f": "STB_frac", "n": "n_annotated"},
+    "description": "STB count == round(frac*N)"
+  },
+  {
+    "claim": "claim-tm-composition",
+    "id": "rev-tmc-id-Endo",
+    "kind": "expr", "lhs": "c", "rhs": "round(f*n)", "tol": 0.5,
+    "vars": {"c": "Endothelial_cells_count", "f": "Endothelial_cells_frac", "n": "n_annotated"},
+    "description": "Endothelial count == round(frac*N)"
+  },
+  {
+    "claim": "claim-tm-composition",
+    "id": "rev-tmc-id-Peri",
+    "kind": "expr", "lhs": "c", "rhs": "round(f*n)", "tol": 0.5,
+    "vars": {"c": "Perivascular_count", "f": "Perivascular_frac", "n": "n_annotated"},
+    "description": "Perivascular count == round(frac*N)"
+  },
+  {
+    "claim": "claim-tm-composition",
+    "id": "rev-tmc-counts-sum-to-N",
+    "kind": "sum",
+    "values": ["CTB_count", "Stroma_count", "Hofbaucer_cells_count", "EVT_count", "STB_count", "Endothelial_cells_count", "Perivascular_count"],
+    "target": "n_annotated", "tol": 0,
+    "description": "per-type counts sum to n_annotated"
+  },
+  {
+    "claim": "claim-tm-composition",
+    "id": "rev-tmc-N-eq-tmshape",
+    "kind": "equal",
+    "values": ["n_annotated", {"claim": "claim-tm-shape", "key": "n_cells"}],
+    "tol": 0,
+    "description": "term composition denominator == claim-tm-shape n_cells"
+  },
+  {
+    "claim": "claim-tm-composition",
+    "id": "rev-tmc-ctb-gt-stroma",
+    "kind": "monotonic",
+    "values": ["Stroma_count", "CTB_count"],
+    "direction": "increasing",
+    "description": "CTB strictly exceeds Stroma (CTB is the largest population)"
+  },
+
+  {
+    "claim": "claim-shift-conservation",
+    "id": "rev-shift-ft-frac-bounds",
+    "kind": "bounds",
+    "values": ["CTB_frac_ft", "EVT_frac_ft", "Endothelial_cells_frac_ft", "Hofbauer_cells_frac_ft", "Perivascular_frac_ft", "STB_frac_ft", "Stroma_frac_ft"],
+    "lo": 0, "hi": 1,
+    "description": "all FT shared-label fractions in [0,1]"
+  },
+  {
+    "claim": "claim-shift-conservation",
+    "id": "rev-shift-tm-frac-bounds",
+    "kind": "bounds",
+    "values": ["CTB_frac_tm", "EVT_frac_tm", "Endothelial_cells_frac_tm", "Hofbauer_cells_frac_tm", "Perivascular_frac_tm", "STB_frac_tm", "Stroma_frac_tm"],
+    "lo": 0, "hi": 1,
+    "description": "all term shared-label fractions in [0,1]"
+  },
+  {
+    "claim": "claim-shift-conservation",
+    "id": "rev-shift-nshared-eq-labeloverlap",
+    "kind": "equal",
+    "values": ["n_shared", {"claim": "claim-label-overlap", "key": "n_shared"}],
+    "tol": 0,
+    "description": "shared-label count (7) agrees with claim-label-overlap"
+  },
+  {
+    "claim": "claim-shift-conservation",
+    "id": "rev-shift-log2sign-CTB",
+    "kind": "expr", "lhs": "d/abs(d)", "rhs": "l/abs(l)", "tol": 1e-9,
+    "vars": {"d": "CTB_delta", "l": "CTB_log2r"},
+    "description": "CTB log2_ratio sign matches delta sign"
+  },
+  {
+    "claim": "claim-shift-conservation",
+    "id": "rev-shift-log2sign-Hofb",
+    "kind": "expr", "lhs": "d/abs(d)", "rhs": "l/abs(l)", "tol": 1e-9,
+    "vars": {"d": "Hofbauer_cells_delta", "l": "Hofbauer_cells_log2r"},
+    "description": "Hofbauer log2_ratio sign matches delta sign"
+  },
+  {
+    "claim": "claim-shift-conservation",
+    "id": "rev-shift-log2sign-Stroma",
+    "kind": "expr", "lhs": "d/abs(d)", "rhs": "l/abs(l)", "tol": 1e-9,
+    "vars": {"d": "Stroma_delta", "l": "Stroma_log2r"},
+    "description": "Stroma log2_ratio sign matches delta sign"
+  },
+  {
+    "claim": "claim-shift-conservation",
+    "id": "rev-shift-log2sign-Peri",
+    "kind": "expr", "lhs": "d/abs(d)", "rhs": "l/abs(l)", "tol": 1e-9,
+    "vars": {"d": "Perivascular_delta", "l": "Perivascular_log2r"},
+    "description": "Perivascular log2_ratio sign matches delta sign"
+  },
+  {
+    "claim": "claim-shift-conservation",
+    "id": "rev-shift-log2sign-STB",
+    "kind": "expr", "lhs": "d/abs(d)", "rhs": "l/abs(l)", "tol": 1e-9,
+    "vars": {"d": "STB_delta", "l": "STB_log2r"},
+    "description": "STB log2_ratio sign matches delta sign"
+  },
+  {
+    "claim": "claim-shift-conservation",
+    "id": "rev-shift-log2sign-EVT",
+    "kind": "expr", "lhs": "d/abs(d)", "rhs": "l/abs(l)", "tol": 1e-9,
+    "vars": {"d": "EVT_delta", "l": "EVT_log2r"},
+    "description": "EVT log2_ratio sign matches delta sign"
+  },
+
+  {
+    "claim": "claim-shift-direction",
+    "id": "rev-dir-ctb-order",
+    "kind": "monotonic",
+    "values": ["CTB_frac_ft", "CTB_frac_tm"],
+    "direction": "decreasing",
+    "description": "CTB fraction falls FT->term (ft > term)"
+  },
+  {
+    "claim": "claim-shift-direction",
+    "id": "rev-dir-hofb-order",
+    "kind": "monotonic",
+    "values": ["Hofbauer_frac_ft", "Hofbauer_frac_tm"],
+    "direction": "increasing",
+    "description": "Hofbauer fraction rises FT->term (ft < term)"
+  },
+  {
+    "claim": "claim-shift-direction",
+    "id": "rev-dir-stroma-rises",
+    "kind": "bounds",
+    "values": ["Stroma_delta"],
+    "lo": 0,
+    "description": "Stroma delta > 0 (stroma rises toward term)"
+  },
+  {
+    "claim": "claim-shift-direction",
+    "id": "rev-dir-ctb-fft-from-step3",
+    "kind": "expr",
+    "lhs": "fft", "rhs": "ctb_count / n",
+    "tol": 1e-9,
+    "vars": {"fft": "CTB_frac_ft", "ctb_count": {"claim": "claim-ft-withperi", "key": "peri_CTB_count"}, "n": {"claim": "claim-ft-withperi", "key": "peri_n_annotated"}},
+    "description": "CTB FT shared-frac reconstructs from step-3 withperi count/N"
+  },
+  {
+    "claim": "claim-shift-direction",
+    "id": "rev-dir-ctb-ftm-from-step3",
+    "kind": "expr",
+    "lhs": "ftm", "rhs": "ctb_count / n",
+    "tol": 1e-9,
+    "vars": {"ftm": "CTB_frac_tm", "ctb_count": {"claim": "claim-tm-composition", "key": "CTB_count"}, "n": {"claim": "claim-tm-composition", "key": "n_annotated"}},
+    "description": "CTB term shared-frac reconstructs from step-3 term count/N"
+  },
+  {
+    "claim": "claim-shift-direction",
+    "id": "rev-dir-hofb-ftm-from-step3",
+    "kind": "expr",
+    "lhs": "ftm", "rhs": "hofb_count / n",
+    "tol": 1e-9,
+    "vars": {"ftm": "Hofbauer_frac_tm", "hofb_count": {"claim": "claim-tm-composition", "key": "Hofbaucer_cells_count"}, "n": {"claim": "claim-tm-composition", "key": "n_annotated"}},
+    "description": "Hofbauer term shared-frac reconstructs from step-3 term Hofbaucer count/N"
+  },
+
+  {
+    "claim": "claim-gene-overlap",
+    "id": "rev-go-hvg-inter-le-min",
+    "kind": "monotonic",
+    "values": ["hvg_n_intersection", "hvg_n_set_a"],
+    "direction": "nondecreasing",
+    "description": "hvg intersection <= set A (5000)"
+  },
+  {
+    "claim": "claim-gene-overlap",
+    "id": "rev-go-hvg-inter-le-union",
+    "kind": "monotonic",
+    "values": ["hvg_n_intersection", "hvg_n_union"],
+    "direction": "nondecreasing",
+    "description": "hvg intersection <= union"
+  },
+  {
+    "claim": "claim-gene-overlap",
+    "id": "rev-go-raw-inter-le-min",
+    "kind": "monotonic",
+    "values": ["raw_n_intersection", "raw_n_set_b"],
+    "direction": "nondecreasing",
+    "description": "raw intersection <= min set (term, 25777)"
+  },
+  {
+    "claim": "claim-gene-overlap",
+    "id": "rev-go-raw-inter-le-union",
+    "kind": "monotonic",
+    "values": ["raw_n_intersection", "raw_n_union"],
+    "direction": "nondecreasing",
+    "description": "raw intersection <= union"
+  },
+  {
+    "claim": "claim-gene-overlap",
+    "id": "rev-go-jaccard-bounds",
+    "kind": "bounds",
+    "values": ["hvg_jaccard", "raw_jaccard"],
+    "lo": 0, "hi": 1,
+    "description": "Jaccard in [0,1]"
+  },
+  {
+    "claim": "claim-gene-overlap",
+    "id": "rev-go-hvg-a-eq-ftgenes",
+    "kind": "equal",
+    "values": ["hvg_n_set_a", {"claim": "claim-ft-shape", "key": "n_genes"}],
+    "tol": 0,
+    "description": "hvg set A == claim-ft-shape n_genes (5000)"
+  },
+  {
+    "claim": "claim-gene-overlap",
+    "id": "rev-go-raw-a-eq-ftraw",
+    "kind": "equal",
+    "values": ["raw_n_set_a", {"claim": "claim-ft-shape", "key": "n_raw_genes"}],
+    "tol": 0,
+    "description": "raw set A == claim-ft-shape n_raw_genes (27526)"
+  },
+  {
+    "claim": "claim-gene-overlap",
+    "id": "rev-go-b-eq-tmgenes",
+    "kind": "equal",
+    "values": ["hvg_n_set_b", "raw_n_set_b", {"claim": "claim-tm-shape", "key": "n_genes"}],
+    "tol": 0,
+    "description": "both set B values == claim-tm-shape n_genes (25777)"
+  },
+
+  {
+    "claim": "claim-label-overlap",
+    "id": "rev-lo-nshared-eq-shift",
+    "kind": "equal",
+    "values": ["n_shared", "shift_n_shared", {"claim": "claim-shift-conservation", "key": "n_shared"}],
+    "tol": 0,
+    "description": "shared-label count agrees across label-overlap, its own shift_n_shared, and claim-shift-conservation (all 7)"
+  },
+  {
+    "claim": "claim-label-overlap",
+    "id": "rev-lo-counts-nonneg",
+    "kind": "bounds",
+    "values": ["n_shared", "n_ft_only", "n_term_only", "n_ft_labels", "n_tm_labels"],
+    "lo": 0,
+    "description": "all label-set counts non-negative"
+  }
+]

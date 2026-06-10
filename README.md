@@ -7,8 +7,9 @@ the code and states conclusions, and independent reviewers check those
 conclusions - and it keeps a deterministic, append-only ledger of every claim and
 every verdict so nothing rests on an agent's say-so.
 
-It grew out of a single-cell RNA-seq review (see `examples/pvns_showcase/`) and is
-generalized for bioinformatics analyses, but the core is domain-agnostic.
+It grew out of a single-cell RNA-seq review and is generalized for bioinformatics
+analyses, but the core is domain-agnostic. A full worked run is bundled in
+`examples/placenta_showcase/`.
 
 ## The idea
 
@@ -224,7 +225,7 @@ src/autoreview/        deterministic core (no LLM)
 .claude/.claude-plugin/plugin.json   the presets packaged as a Claude Code plugin
 .claude-plugin/marketplace.json      this repo as its own plugin marketplace
 examples/toy/          runnable synthetic walkthrough
-examples/pvns_showcase/  the original scRNA-seq review (frozen; data not bundled)
+examples/placenta_showcase/  frozen real run: first-trimester vs term placenta (data on Zenodo)
 tests/                 pytest suite for the deterministic core
 docs/ARCHITECTURE.md   data model, check-spec schema, design notes
 ```

@@ -1,0 +1,21 @@
+dataset,celltype_col,celltype,count,fraction,n_annotated
+first_trimester,annotation,CTB,14192,0.400214319957136,35461
+first_trimester,annotation,Stroma,10446,0.2945771410845718,35461
+first_trimester,annotation,Hofbauer cells,5838,0.1646315670736866,35461
+first_trimester,annotation,EVT,2692,0.07591438481712304,35461
+first_trimester,annotation,STB,1505,0.042440991511801696,35461
+first_trimester,annotation,Endothelial cells,788,0.02222159555568089,35461
+first_trimester,annotation_withperi,CTB,14192,0.400214319957136,35461
+first_trimester,annotation_withperi,Stroma,6857,0.19336736132652774,35461
+first_trimester,annotation_withperi,Hofbauer cells,5838,0.1646315670736866,35461
+first_trimester,annotation_withperi,Perivascular,3589,0.10120977975804404,35461
+first_trimester,annotation_withperi,EVT,2692,0.07591438481712304,35461
+first_trimester,annotation_withperi,STB,1505,0.042440991511801696,35461
+first_trimester,annotation_withperi,Endothelial cells,788,0.02222159555568089,35461
+term,annotate_general,CTB,7614,0.3256908204294636,23378
+term,annotate_general,Stroma,6508,0.27838138420737446,23378
+term,annotate_general,Hofbaucer cells,5790,0.24766874839592778,23378
+term,annotate_general,EVT,1889,0.08080246385490632,23378
+term,annotate_general,STB,586,0.02506630165112499,23378
+term,annotate_general,Endothelial cells,520,0.022243134570964156,23378
+term,annotate_general,Perivascular,471,0.020147146890238686,23378

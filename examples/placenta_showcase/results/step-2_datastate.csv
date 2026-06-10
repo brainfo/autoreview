@@ -1,0 +1,7 @@
+dataset,matrix,min,max_nonzero,frac_noninteger,has_negative,state_label
+first_trimester,X,0.0,4.150272369384766,0.9998769991345481,False,log_normalized
+first_trimester,counts,0.0,8.2489013671875,0.999879963010824,False,log_normalized
+first_trimester,raw.X,0.0,4.150272369384766,0.9999193892932859,False,log_normalized
+term,X,0.0,8.589343070983887,0.9998318808954418,False,log_normalized
+term,counts,0.0,3309.0,0.0,False,raw_counts
+term,log1pM,0.0,8.589343070983887,0.9998318808954418,False,log_normalized

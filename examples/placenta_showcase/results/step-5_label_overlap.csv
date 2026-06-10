@@ -1,0 +1,8 @@
+label,in_first_trimester,in_term,shared
+CTB,True,True,True
+EVT,True,True,True
+Endothelial cells,True,True,True
+Hofbauer cells,True,True,True
+Perivascular,True,True,True
+STB,True,True,True
+Stroma,True,True,True

@@ -1,0 +1,56 @@
+[
+  {
+    "path": "/mnt/run/jh/projects/tes_agent/first_trimester_final.h5ad",
+    "sha256": "85b09152b2be819023a0b8aa93557f9bc3eed793ed8df253491d651366354ce8",
+    "exists": true,
+    "role": "input"
+  },
+  {
+    "path": "/mnt/run/jh/projects/tes_agent/term_final.h5ad",
+    "sha256": "888e0acd8a80c5de88a09bb2db3a69df60d94afa0019bb1e4202363842c8a0d3",
+    "exists": true,
+    "role": "input"
+  },
+  {
+    "path": "results/step-1_structure.csv",
+    "sha256": "7e2a21a09da353ab88bb525fe438572eab06b5fb02dada60ec58513cae1e5380",
+    "exists": true,
+    "role": "output"
+  },
+  {
+    "path": "results/step-2_datastate.csv",
+    "sha256": "00a83188502b40b9671a606697a4763f1a87857e56a7c3df85baea3afec72e2e",
+    "exists": true,
+    "role": "output"
+  },
+  {
+    "path": "results/step-3_composition.csv",
+    "sha256": "4d505b0612213bc8da644bbfb9c5f680431fbea4fb4f46bfc383dd13de5ac6f2",
+    "exists": true,
+    "role": "output"
+  },
+  {
+    "path": "results/step-3_composition_totals.csv",
+    "sha256": "f77b4ade819cfe49a29b38562a89d0f9a5e990a0ad2256d3d1a51a72ccde006a",
+    "exists": true,
+    "role": "output"
+  },
+  {
+    "path": "results/step-4_composition_shift.csv",
+    "sha256": "80c873d8f1bcc72eb6a952e5fd222002507371db5188d49684bbc4e079d25018",
+    "exists": true,
+    "role": "output"
+  },
+  {
+    "path": "results/step-5_gene_overlap.csv",
+    "sha256": "eea1cfffe438debf976d621145bdbeb8d250cb5106e23418d30c8b31d337f7d1",
+    "exists": true,
+    "role": "output"
+  },
+  {
+    "path": "results/step-5_label_overlap.csv",
+    "sha256": "adc3827dca8820058bfd057f8f2e142b6dfeb714415fdb75f91c095c585e63a2",
+    "exists": true,
+    "role": "output"
+  }
+]
