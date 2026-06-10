@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "autoreview",
+  "displayName": "autoreview",
+  "version": "0.1.0",
+  "description": "Plan / execute / review harness for trustworthy computational analysis. Five gated subagents (planner, executor, reviewer-numeric, reviewer-literature, overseer) and the /autoreview-run command drive a deterministic, file-based ledger so no conclusion rests on an agent's say-so. Requires the autoreview CLI (pip install autoreview, or uv tool install).",
+  "author": { "name": "antonoresten", "email": "antonoresten@proton.me" },
+  "homepage": "https://github.com/antonoresten/autoreview",
+  "repository": "https://github.com/antonoresten/autoreview",
+  "license": "MIT",
+  "keywords": ["analysis", "review", "agents", "reproducibility", "bioinformatics"]
+}

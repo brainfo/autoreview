@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "autoreview-marketplace",
+  "owner": { "name": "antonoresten", "email": "antonoresten@proton.me" },
+  "description": "Marketplace for autoreview - a plan / execute / review harness for trustworthy computational analysis.",
+  "plugins": [
+    {
+      "name": "autoreview",
+      "source": "./.claude",
+      "description": "Plan / execute / review harness: gated subagents driving a deterministic, file-based ledger so no conclusion rests on an agent's say-so.",
+      "license": "MIT",
+      "keywords": ["analysis", "review", "agents", "reproducibility", "bioinformatics"]
+    }
+  ]
+}
