@@ -1,0 +1,47 @@
+{
+  "question": "Across cohortA.csv and cohortB.csv, does disease raise macrophage infiltration consistently? Pool the cohorts and compare disease vs control.",
+  "loop": 2,
+  "amends": "loop 1, in response to dev-step3-scale (accepted): cohortA is raw counts, cohortB is fractions, so pooling raw values is invalid. step-3 is replaced with a within-cohort comparison; the original consistency question is answered by comparing the per-cohort directions.",
+  "inputs": ["data/cohortA.csv", "data/cohortB.csv"],
+  "steps": [
+    {
+      "id": "step-3a",
+      "goal": "Within each cohort, compare disease vs control on per-sample macrophage fractions (scale-invariant).",
+      "approach": "For each cohort, divide each row by its own total to get per-sample Mac fractions, then take the group mean for control and disease; record the delta.",
+      "inputs": ["data/cohortA.csv", "data/cohortB.csv"],
+      "outputs": ["results/step-3a_within_cohort.csv"],
+      "claims": [
+        {
+          "id": "claim-mac-cohortA",
+          "states": "In cohort A, disease raises the macrophage fraction.",
+          "numbers": "cohortA ctrl_mac, dis_mac, delta",
+          "interpretation": "Disease raises macrophages in cohort A.",
+          "invariants": "fractions in [0,1]; delta == dis_mac - ctrl_mac; dis_mac > ctrl_mac."
+        },
+        {
+          "id": "claim-mac-cohortB",
+          "states": "In cohort B, disease lowers the macrophage fraction.",
+          "numbers": "cohortB ctrl_mac, dis_mac, delta",
+          "interpretation": "Disease lowers macrophages in cohort B.",
+          "invariants": "fractions in [0,1]; delta == dis_mac - ctrl_mac; dis_mac < ctrl_mac."
+        }
+      ]
+    },
+    {
+      "id": "step-3b",
+      "goal": "Decide whether the disease effect is consistent across cohorts.",
+      "approach": "Multiply the two per-cohort deltas; a negative product means the cohorts move in opposite directions (not consistent).",
+      "inputs": ["results/step-3a_within_cohort.csv"],
+      "outputs": ["results/step-3b_consistency.csv"],
+      "claims": [
+        {
+          "id": "claim-mac-consistency",
+          "states": "The disease effect on macrophages is NOT consistent across cohorts.",
+          "numbers": "deltaA, deltaB, product",
+          "interpretation": "Macrophage response to disease is cohort-dependent.",
+          "invariants": "product == deltaA * deltaB; product < 0 (opposite directions)."
+        }
+      ]
+    }
+  ]
+}

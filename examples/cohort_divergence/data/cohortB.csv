@@ -1,0 +1,5 @@
+sample,group,Mac,Fb,T,Other
+B_ctrl_1,control,0.30,0.30,0.30,0.10
+B_ctrl_2,control,0.32,0.30,0.28,0.10
+B_dis_1,disease,0.20,0.40,0.30,0.10
+B_dis_2,disease,0.18,0.42,0.30,0.10

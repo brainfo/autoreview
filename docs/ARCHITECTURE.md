@@ -15,23 +15,31 @@ parts run with no LLM; the agents only do what genuinely needs judgement.
         |
    [executor] write + run code ---> results/ , scripts/
         |        log claims (numbers, checks, input/output hashes)
+        |        record deviations for broken plan assumptions --> deviations.jsonl
         v
      claims.jsonl
         |
    [reviewer-numeric] author invariants, run engine --> verdicts.jsonl (numeric)
    [reviewer-literature] search literature ----------> verdicts.jsonl (literature)
         |
-   [overseer] guard verify (inputs intact, outputs present, queues empty)
+   [overseer] guard verify (inputs intact, outputs present, queues empty,
+        |      no open contract deviation)
         v
-     REPORT.md
+   loop signal? (violation | refuted/uncertain | open/unenacted deviation)
+        |  yes -> [planner] re-plan (loop N+1), enact deviations, supersede claims
+        |  no  -> REPORT.md
 ```
 
 The main loop (or the `/autoreview-run` command) is the conductor: it launches each
-agent and runs the overseer between stages, proceeding only on GO.
+agent and runs the overseer between stages, proceeding only on GO. A run is a
+single pass by default; it loops only when a pass leaves a signal that warrants
+another (see "Deviations and the conditional loop").
 
 ## The ledger
 
-Two append-only JSONL files under the ledger directory (`.autoreview` by default).
+Append-only JSONL files under the ledger directory (`.autoreview` by default):
+`claims.jsonl` and `verdicts.jsonl` (below), plus `deviations.jsonl` (see
+"Deviations and the conditional loop").
 
 A **claim** records a conclusion and everything the reviewers need:
 
@@ -70,6 +78,55 @@ track by `nhash = f(numbers, checks)`. Re-logging a claim is idempotent. Editing
 the prose re-opens only the literature verdict; editing a number or a check
 re-opens only the numeric verdict. The two reviews never invalidate each other,
 so you can refine one without redoing the other.
+
+## Deviations and the conditional loop
+
+An analysis sometimes discovers, mid-run, that the plan no longer matches the
+data. The plan is a **contract**: the planner declares the claims each step will
+produce, and the overseer verifies the executor delivered exactly those. If the
+executor could rewrite the plan, that check would mean nothing — it would be
+grading its own homework. So discoveries are handled by **capture, not enact**.
+
+Three kinds, handled differently:
+
+- **Method (case A).** A *how*, not a *what* — a renamed column, a misspelled
+  label, a moved path. The executor adapts in place and records the adaptation in
+  the claim. It never changes which claims are produced, so it never gates or
+  loops. Recorded as a `method` deviation only if non-obvious (audit trail).
+- **Contract (case B).** An assumption the plan rested on is false — an input
+  lacks the raw counts a step needs; two datasets meant to be pooled are on
+  different scales. The executor does **not** fabricate a number to satisfy the
+  plan. It records a `contract` deviation and skips the claim it cannot honestly
+  make (a promised claim may be absent only if a deviation names it). This gates
+  sign-off and feeds the loop signal.
+- **Finding (case C).** Just a result — it is a claim, and it gets reviewed. No
+  special machinery.
+
+A deviation is an append-only record in `deviations.jsonl`, mirroring the
+claim → verdict pattern: the executor writes the observation; only the
+planner/overseer gate writes a resolution (`accepted` / `rejected` / `deferred`,
+with where the fix is `enacted_in`). Its `scope` says what a fix touches and so
+whether it is a same-run amendment or a next-loop supersede:
+
+- `forward` — a not-yet-settled step changes; the re-plan amends the tail. No
+  reviewed artifact is invalidated.
+- `backward` — a step already executed is invalid; its claims are **superseded**
+  in a new loop. The loop-N claim (same id, new `nhash`, stamped `loop: N`)
+  overrides the loop-1 claim in every query, while the original stays on disk as
+  history. Nothing is overwritten.
+
+**The loop is conditional.** After a pass the conductor gathers the loop signal —
+any numeric `violation`, any literature `refuted`/`uncertain`, any contract
+deviation still open or accepted-but-unenacted. Empty signal → stop; the initial
+plan was sufficient. Non-empty → the planner re-plans to address exactly those
+signals, and the pass repeats (capped at 3 loops). The signal *is* the reason to
+loop, so the loop earns its place instead of running by ritual.
+
+**The ledger is the memory.** The "what we learned for the next loop" is not a
+separate notes file — it is `deviations.jsonl` plus the `violation` / `refuted`
+verdicts in `verdicts.jsonl`, already on disk, already diffable, each already
+tagged with the step or claim it attaches to. The re-planning planner reads them
+directly.
 
 ## The numeric / logic engine
 

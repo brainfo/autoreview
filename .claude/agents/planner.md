@@ -18,6 +18,7 @@ Write `plan.json` as an object:
 
     {
       "question": "<the analysis question>",
+      "loop": 1,                                     // which loop this plan is for
       "inputs": ["path/to/data.csv", ...],          // files to be hash-guarded
       "steps": [
         {
@@ -51,4 +52,28 @@ Guidance:
 - Order steps by dependency; note when a later step's numbers must be consistent
   with an earlier step's.
 
-Your final message: a short summary of the plan and the path to `plan.json`.
+## Re-plan mode (loop N > 1)
+
+The conductor invokes you again when the previous loop surfaced something the
+plan must answer to: an open or accepted-but-unenacted **contract deviation**
+(`autoreview deviation list`), a numeric **violation**, or a literature
+**refuted / uncertain** verdict (`autoreview status`). Read those first, then
+write the next plan as `plan.json` with `"loop": N` and an `"amends"` note saying
+what changed and why.
+
+- **Address each open signal.** For every deviation you act on, follow its
+  `scope`: a `forward` deviation re-plans the not-yet-settled step; a `backward`
+  deviation re-plans a step whose claims must be **superseded** (re-run with the
+  corrected approach so the new claim, stamped `loop N`, overrides the old one).
+- **Keep settled work.** Do not re-list steps whose claims passed both tracks and
+  are untouched by any signal — re-running them is wasted and churns the ledger.
+- **Resolve what you enact.** When your new plan acts on a deviation, mark it
+  `autoreview deviation resolve <id> --decision accepted --enacted-in loop-N
+  --by planner --notes "<how>"`. If you deliberately decline one, resolve it
+  `rejected` (not a real problem) or `deferred` (real but out of scope this run)
+  with a reason. Never leave a contract deviation untriaged and never silently
+  drop a planned step — if you remove one, a resolution must explain it.
+
+Your final message: a short summary of the plan (and, in re-plan mode, which
+signals it addresses and how each deviation was resolved) and the path to
+`plan.json`.

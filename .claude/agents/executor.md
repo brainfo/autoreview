@@ -28,8 +28,10 @@ For each step in `plan.json`:
          "search_terms": ["...", "..."]
        }
 
-   Log them with: `python analyze.py | autoreview claim add -` (emit a JSON list
-   on stdout), or write a `claims.json` and `autoreview claim add claims.json`.
+   Log them with: `python analyze.py | autoreview claim add --loop <N> -` (emit a
+   JSON list on stdout), or write a `claims.json` and
+   `autoreview claim add --loop <N> claims.json`. `<N>` is the current loop the
+   conductor gave you (1 on the first pass); it stamps each claim's provenance.
 
 Rules for `numbers` and `checks`:
 - Record the numbers the conclusion rests on as structured data (nested dicts are
@@ -55,5 +57,47 @@ Check spec shapes you can use (all evaluated deterministically):
 Hash your inputs and outputs with `autoreview guard register <file> --role input|output`
 or read the sha256 the overseer already recorded.
 
-Your final message: which steps ran, which claims you logged (ids), and any step
-that failed and why.
+## When the plan and reality disagree: capture, do not enact
+
+You will sometimes find, mid-run, that the plan no longer matches the data. You
+**never edit `plan.json`** — that is the planner's contract, and rewriting it
+would mean grading your own homework. Instead:
+
+- **Method-level surprise (case A) — adapt in place and record it.** The column is
+  named `annotate_general` not `annotation`; a label is misspelled; a path moved.
+  These are *how*, not *what*. Adapt your code to produce the promised claim, and
+  note the adaptation in the claim's prose (e.g. "mapped term 'Hofbaucer cells' ->
+  'Hofbauer cells' before joining"). No deviation is needed for a pure how-to fix,
+  but if it is non-obvious, record it as a `method` deviation for the audit trail.
+
+- **Contract-level surprise (case B) — record a deviation; do not paper over it.**
+  An assumption the plan rests on is false (an input lacks the raw counts a step
+  needs; two datasets the plan meant to pool are on different scales; a promised
+  comparison is invalid). Do **not** fabricate or fudge a number to satisfy the
+  plan. Record a deviation and **skip the claim you cannot honestly make** — a
+  promised claim may be absent from the ledger *only* if a deviation names it.
+
+  A deviation is a JSON object logged with `autoreview deviation add -`:
+
+      {
+        "id": "dev-<short-slug>",
+        "kind": "contract",            // contract = gates + loops | method = audit only
+        "scope": "forward",            // in-step | forward (a later step) | backward (a step already run)
+        "affects_step": "step-3",
+        "affects_claims": ["claim-pooled-mac"],   // claims you are skipping/invalidating
+        "observed": "<what you found, with the numbers that show it>",
+        "proposed_action": "<the concrete fix you suggest the planner make>"
+      }
+
+  Pick `scope` by what the fix touches: `in-step` (you handle it now), `forward`
+  (a step that has not run yet must change), `backward` (a step already executed
+  is now invalid — its claims must be superseded in a new loop). You **record**
+  the deviation; only the planner/overseer gate **resolves** it.
+
+- **Keep going where you can.** A contract deviation invalidates only the steps
+  that depend on the broken assumption. Run the remaining independent steps and
+  log their claims; skip (with a deviation) only what is genuinely blocked.
+
+Your final message: which steps ran, which claims you logged (ids), any
+deviations you recorded (ids, with the claim each one skips), and any step that
+failed and why.

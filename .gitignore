@@ -10,6 +10,7 @@ dist/
 .venv/
 venv/
 .env
+uv.lock
 
 # Tooling caches
 .pytest_cache/

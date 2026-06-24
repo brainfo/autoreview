@@ -30,7 +30,17 @@ Checkpoints:
 - After execution: for each plan step, its declared output files now exist
   (`guard verify`), and every claim id the plan promised is present in the ledger
   (`autoreview status`). NO-GO and name the gap if a promised claim is missing or
-  a script failed. Confirm no input changed during the run.
+  a script failed. **Exception:** a promised claim may be absent if a deviation
+  names it in `affects_claims` (`autoreview deviation list`) — that is a recorded
+  skip, not a silent gap. Confirm no input changed during the run.
+
+- Deviation gate (after execution, and before sign-off): run
+  `autoreview deviation list --open`. An **open contract deviation** (recorded by
+  the executor, not yet triaged by the planner) is a **NO-GO** and a loop signal:
+  the plan rested on an assumption that broke, and the conductor must re-plan. A
+  deviation that has been resolved (`accepted` / `rejected` / `deferred`) no
+  longer blocks; report its decision. `method` deviations never block — they are
+  audit trail. Surface any deviation whose `loop_pending` is true: a fix is owed.
 
 - After numeric review: `autoreview pending --kind numeric` is empty (every
   numeric claim has a verdict). Read the verdicts: report any `violation` - that
@@ -41,7 +51,8 @@ Checkpoints:
   look fabricated or empty).
 
 - Before sign-off: `autoreview report` regenerated, the status table has no
-  stale `-` where a verdict was expected, and the manifest still verifies.
+  stale `-` where a verdict was expected, `autoreview deviation list --open` is
+  empty (every contract deviation triaged), and the manifest still verifies.
 
 Treat a missing or unverifiable artifact as a failure of the responsible agent,
 and say which agent and which artifact. Your final message is a checklist of each

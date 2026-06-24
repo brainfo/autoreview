@@ -17,6 +17,43 @@ def _m(verdict):
     return MARK.get(verdict, f"[{(verdict or '-').upper()}]")
 
 
+def _deviations_section(led):
+    rows = led.deviation_rows()
+    if not rows:
+        return []
+    out = ["## Deviations & amendments", "",
+           "Mid-run findings that the plan did not anticipate. A `contract` "
+           "deviation is a broken assumption that gates sign-off until triaged; a "
+           "`method` deviation is a local adaptation recorded for the audit trail.",
+           "",
+           "| id | loop | affects | kind | scope | decision | enacted |",
+           "|---|---|---|---|---|---|---|"]
+    for d, r in rows:
+        decision = (r or {}).get("decision") or ("OPEN" if d.get("kind") == "contract" else "-")
+        out.append(
+            f"| {d['id']} | {d.get('loop', '-')} | {d.get('affects_step') or '-'} "
+            f"| {d.get('kind')} | {d.get('scope')} | {decision} "
+            f"| {(r or {}).get('enacted_in') or '-'} |")
+    out.append("")
+    for d, r in rows:
+        out += [f"### {d['id']}", "", f"**Observed:** {d.get('observed', '')}", ""]
+        if d.get("proposed_action"):
+            out += [f"**Proposed action:** {d['proposed_action']}", ""]
+        if r:
+            line = f"**Resolution:** {r.get('decision')}"
+            if r.get("enacted_in"):
+                line += f" (enacted in {r['enacted_in']})"
+            if r.get("by"):
+                line += f" — by {r['by']}"
+            out += [line, ""]
+            if r.get("notes"):
+                out += [f"_Note:_ {r['notes']}", ""]
+        elif d.get("kind") == "contract":
+            out += ["**Resolution:** _OPEN — blocks sign-off until triaged._", ""]
+    out.append("")
+    return out
+
+
 def render(root):
     led = Ledger(root)
     claims = led.load_claims()
@@ -44,8 +81,13 @@ def render(root):
         )
     out.append("")
 
+    out += _deviations_section(led)
+
     for c, nv, lv in rows:
-        out += [f"## {c['id']}", "", f"**Claim:** {c['claim']}", ""]
+        head = f"## {c['id']}"
+        if c.get("loop") and c["loop"] != 1:
+            head += f"  _(loop {c['loop']})_"
+        out += [head, "", f"**Claim:** {c['claim']}", ""]
         if c.get("interpretation"):
             out += [f"**Interpretation under test:** {c['interpretation']}", ""]
         if nv:

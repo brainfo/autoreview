@@ -8,6 +8,12 @@ every verdict so nothing rests on an agent's say-so.
 A full worked run is saved in `examples/placenta_showcase/`, which was from one prompt "/autoreview-run what you notice with @first_trimester_final.h5ad
 @term_final.h5ad".
 
+Two runnable, dependency-free walkthroughs of the deterministic core live in
+`examples/`: `toy/` (the basic plan → execute → review flow) and
+`cohort_divergence/` (the **deviation loop** — a question whose plan rests on a
+false assumption, caught mid-run and re-planned into an honest answer). Run either
+with its `./run.sh`.
+
 ## Install
 
 The following two are required
@@ -49,9 +55,9 @@ state of the review lands in `.autoreview/` as it happens:
 | role | drives | writes |
 |---|---|---|
 | `conductor` (the `/autoreview-run` command) | sets `AUTOREVIEW_DIR`; launches each role and the overseer; `autoreview report` | orchestration; the final `REPORT.md` and summary |
-| `overseer` (at every checkpoint) | `autoreview guard register`, `autoreview guard verify`, `autoreview pending`, `autoreview status` | the integrity manifest; a GO / NO-GO gate between stages |
-| `planner` | writes `plan.json` directly | the ordered plan: inputs, steps, and the claims each step will produce |
-| `executor` | `autoreview claim add`, `autoreview guard register` | each claim with its numbers, seed checks, and input/output hashes |
+| `overseer` (at every checkpoint) | `autoreview guard register`, `autoreview guard verify`, `autoreview deviation list`, `autoreview pending`, `autoreview status` | the integrity manifest; a GO / NO-GO gate between stages |
+| `planner` | writes `plan.json` directly; `autoreview deviation resolve` when re-planning | the ordered plan: inputs, steps, and the claims each step will produce |
+| `executor` | `autoreview claim add`, `autoreview deviation add`, `autoreview guard register` | each claim with its numbers, seed checks, hashes; a deviation for any plan assumption found broken |
 | `reviewer-numeric` | `autoreview check run` | the task-specific invariants and the numeric verdicts |
 | `reviewer-literature` | `autoreview verdict add` | cited literature verdicts, each with a confidence and a caveat |
 
@@ -64,6 +70,7 @@ verdicts - without re-running the agents or taking their word for anything:
 ```
 autoreview status          # every claim, both review tracks, one line each
 autoreview pending         # anything still unreviewed
+autoreview deviation list  # plan deviations and how each was resolved
 autoreview guard verify    # re-hash inputs/outputs, confirm nothing drifted mid-run
 autoreview check run       # re-run the numeric checks - deterministic, same verdicts
 autoreview report          # regenerate REPORT.md

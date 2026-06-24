@@ -5,6 +5,9 @@ point so the deterministic state lives in files, not in any agent's context.
     autoreview claim add  <file|->         log one or more claims (JSON)
     autoreview verdict add <file|->        log one or more verdicts (JSON)
     autoreview check run  [--specs f]      run numeric/logic checks, log verdicts
+    autoreview deviation add <file|->      record plan deviation(s) (executor)
+    autoreview deviation resolve <id>      triage a deviation (gate only)
+    autoreview deviation list [--open]     list deviations; non-zero if any block
     autoreview guard register <files...>   record files + sha256 in the manifest
     autoreview guard verify                re-hash the manifest, report drift
     autoreview report                      (re)generate REPORT.md
@@ -46,7 +49,7 @@ def cmd_claim_add(args):
             numbers=c.get("numbers"), checks=c.get("checks"),
             ctype=c.get("type", "data+interpretation"), source=c.get("source"),
             inputs=c.get("inputs"), outputs=c.get("outputs"),
-            search_terms=c.get("search_terms"))
+            search_terms=c.get("search_terms"), loop=c.get("loop", args.loop))
         print(f"claim {rec['id']} [{rec['hash']}/{rec['nhash']}]")
         n += 1
     print(f"logged {n} claim(s)")
@@ -95,6 +98,51 @@ def cmd_check_run(args):
             led.log_verdict(c["id"], c["nhash"], "numeric", verdict, checks=results)
     print(f"\nran numeric review on {ran} claim(s); {violations} with violations")
     return 1 if violations else 0
+
+
+def cmd_deviation_add(args):
+    led = _led(args)
+    n = 0
+    for d in _load_json(args.source):
+        rec = led.log_deviation(
+            id=d["id"], observed=d["observed"], affects_step=d.get("affects_step"),
+            affects_claims=d.get("affects_claims"), kind=d.get("kind", "contract"),
+            scope=d.get("scope", "forward"), proposed_action=d.get("proposed_action"),
+            loop=d.get("loop", args.loop))
+        print(f"deviation {rec['id']} [{rec['hash']}] {rec['kind']}/{rec['scope']} "
+              f"-> {rec.get('affects_step')}")
+        n += 1
+    print(f"logged {n} deviation(s)")
+    return 0
+
+
+def cmd_deviation_resolve(args):
+    led = _led(args)
+    rec = led.resolve_deviation(args.id, args.decision, enacted_in=args.enacted_in,
+                                by=args.by, notes=args.notes)
+    print(f"deviation {rec['deviation_id']} -> {rec['decision']}"
+          + (f" (enacted in {rec['enacted_in']})" if rec.get("enacted_in") else ""))
+    return 0
+
+
+def cmd_deviation_list(args):
+    led = _led(args)
+    blocking = {d["id"] for d in led.open_deviations()}
+    looping = {d["id"] for d in led.loop_pending_deviations()}
+    rows = []
+    for d, r in led.deviation_rows():
+        if args.open and d["id"] not in blocking:
+            continue
+        rows.append({
+            "id": d["id"], "loop": d.get("loop"), "kind": d.get("kind"),
+            "scope": d.get("scope"), "affects_step": d.get("affects_step"),
+            "decision": (r or {}).get("decision"),
+            "enacted_in": (r or {}).get("enacted_in"),
+            "blocking": d["id"] in blocking, "loop_pending": d["id"] in looping,
+        })
+    print(json.dumps(rows, indent=2))
+    # non-zero when something still blocks sign-off, so the overseer can gate on it
+    return 1 if blocking else 0
 
 
 def cmd_guard_register(args):
@@ -155,6 +203,8 @@ def build_parser():
     claim = sub.add_parser("claim", help="manage claims").add_subparsers(dest="x", required=True)
     ca = claim.add_parser("add", help="log claim(s) from a JSON file or '-'")
     ca.add_argument("source")
+    ca.add_argument("--loop", type=int, default=1,
+                    help="loop/version stamp for claims lacking their own (default 1)")
     ca.set_defaults(func=cmd_claim_add)
 
     verdict = sub.add_parser("verdict", help="manage verdicts").add_subparsers(dest="x", required=True)
@@ -168,6 +218,26 @@ def build_parser():
     cr.add_argument("--force", action="store_true", help="re-run even if a verdict exists")
     cr.add_argument("--dry-run", action="store_true", help="evaluate but do not log verdicts")
     cr.set_defaults(func=cmd_check_run)
+
+    dev = sub.add_parser("deviation", help="record/resolve plan deviations").add_subparsers(dest="x", required=True)
+    da = dev.add_parser("add", help="record deviation(s) from a JSON file or '-'")
+    da.add_argument("source")
+    da.add_argument("--loop", type=int, default=1,
+                    help="loop stamp for deviations lacking their own (default 1)")
+    da.set_defaults(func=cmd_deviation_add)
+    dre = dev.add_parser("resolve", help="resolve a deviation (gate only)")
+    dre.add_argument("id")
+    dre.add_argument("--decision", required=True,
+                     choices=["accepted", "rejected", "deferred"])
+    dre.add_argument("--enacted-in", dest="enacted_in",
+                     help="where the fix lands, e.g. loop-2")
+    dre.add_argument("--by", help="who resolved it, e.g. planner")
+    dre.add_argument("--notes")
+    dre.set_defaults(func=cmd_deviation_resolve)
+    dl = dev.add_parser("list", help="list deviations (JSON); non-zero if any block")
+    dl.add_argument("--open", action="store_true",
+                    help="only deviations that still block sign-off")
+    dl.set_defaults(func=cmd_deviation_list)
 
     guard = sub.add_parser("guard", help="file-integrity guard").add_subparsers(dest="x", required=True)
     gr = guard.add_parser("register", help="record files + sha256 in the manifest")

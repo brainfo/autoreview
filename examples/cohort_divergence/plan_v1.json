@@ -1,0 +1,23 @@
+{
+  "question": "Across cohortA.csv and cohortB.csv, does disease raise macrophage infiltration consistently? Pool the cohorts and compare disease vs control.",
+  "loop": 1,
+  "inputs": ["data/cohortA.csv", "data/cohortB.csv"],
+  "steps": [
+    {
+      "id": "step-3",
+      "goal": "Pool both cohorts and compare the disease vs control macrophage level.",
+      "approach": "Concatenate the rows of cohortA and cohortB, sum Mac/Fb/T/Other per group, and compute the pooled macrophage fraction for control vs disease.",
+      "inputs": ["data/cohortA.csv", "data/cohortB.csv"],
+      "outputs": ["results/step-3_pooled.csv"],
+      "claims": [
+        {
+          "id": "claim-pooled-mac",
+          "states": "Pooled across both cohorts, the macrophage fraction is higher in disease than control.",
+          "numbers": "pooled ctrl_mac, dis_mac over cohortA+cohortB",
+          "interpretation": "Disease drives macrophage infiltration across cohorts.",
+          "invariants": "fractions in [0,1]; dis_mac > ctrl_mac."
+        }
+      ]
+    }
+  ]
+}
